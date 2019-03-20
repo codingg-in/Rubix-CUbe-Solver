@@ -205,13 +205,6 @@ def approxIsSquare(approx, length_threshold = 0.7, angle_threshold = 10):
     
     return True
 
-
-def finalSquares(approx):
-    
-
-    area = cv2.contourArea(sc)
-
-    return area
     
     
     
@@ -261,34 +254,56 @@ for j in range(0,len(square_contours)):
     (x, y, w, h) = cv2.boundingRect(square_contours[j])
     for i in range(j+1,len(square_contours)):
         (xx, yy, ww, hh) = cv2.boundingRect(square_contours[i])
-        if (x<=xx) and ((x+w)>=(xx+ww)) and (y<yy) and ((y+h)>=(yy+hh)):
+        if (x<=xx) and ((x+w)>=(xx+ww)) and (y<yy) and ((y+h)>=(yy+hh)) \
+           and cv2.contourArea(square_contours[j])/25 > cv2.contourArea(square_contours[i]):
             square_in_square.append(square_contours[i])
-            
+        elif (x<=xx) and ((x+w)>=(xx+ww)) and (y<yy) and ((y+h)>=(yy+hh)):
+            square_in_square.append(square_contours[j])
+
+"""
+Removing duplicacy from square_in_square
+"""
+
+j = 0
+while j < len(square_in_square):
+    i = j + 1
+    while i < len(square_in_square):
+        if (square_in_square[j]==square_in_square[i]).all():
+            del square_in_square[i]
+            i = i - 1
+        i = i + 1
+    j = j + 1
+
 
 """
 Removing smaller squares from the list and keeping rest
 """
-sc_sis=[]
 
-k=0
+temp_sc_copy = square_contours.copy()
+
+
 if(len(square_in_square)>0):
-    for j in range(0,len(square_contours)):
-        if (square_contours[j]==square_in_square[k]).all():
-            k=k+1 
-        else:
-           sc_sis.append(square_contours[j])
-        if k==len(square_in_square):
-            k=k-1
-elif len(square_in_square)==0:
-    for j in range(0,len(square_contours)):
-            sc_sis.append(square_contours[j])
-    
+    j = 0
+    while j < len(temp_sc_copy):
+        i = 0
+        while i < len(square_in_square):
+            if (temp_sc_copy[j]==square_in_square[i]).all():
+                del temp_sc_copy[j]
+                j = j - 1
+                break
+            i = i + 1
+        j = j + 1
+sc_sis = temp_sc_copy
 
+    
 ##print (square_contours)
 ##print (square_in_square)
-##print(sc_sis)
+##print (sc_sis)
+##print (temp_sc_copy)
 
-"""
+
+
+""" 
 For finding which are cells of rubik's cube face, I am going to
 find area and keep only those which are of same area in approx and
 remove significantly small ones. (For starter)
@@ -307,10 +322,12 @@ for sc in sc_sis:
     if max_area/2 < area:
         cube_cells.append(sc)
 
-##for sc in square_contours:
-##    cv2.drawContours(image, [sc], -1, (0,255,0), 2)
+
+cccc=0
 for sc in cube_cells:
     cv2.drawContours(image, [sc], -1, (0,255,0), 2)
+    cv2.putText(image,str(cccc),cv2.boundingRect(sc)[:2], cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),2)
+    cccc=cccc+1
 
 cv2.imshow("5",image)
 
