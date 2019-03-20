@@ -299,9 +299,40 @@ def eliminatingSquares(square_contours, square_in_square):
         if max_area/4 < area:
             cube_cells.append(sc)
     return cube_cells
-    
 
-image=cv2.imread("cube.png")
+def orientation(cube_cells):
+    """
+    Arranging cell at (1, 1) coordinate at the first position of cube_cells
+    """
+    min_x = None
+    pos = 0
+    for i in range (0, len(cube_cells)):
+        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        if min_x == None or x < min_x:
+            min_x = x
+            pos = i
+
+    temp = cube_cells[0]
+    del cube_cells[0]
+    cube_cells.insert(0,cube_cells[pos-1])
+    del cube_cells[pos]
+    cube_cells.insert(pos,temp)
+  
+    min_y = None
+    pos = 0
+    for i in range (0, len(cube_cells)):
+        (xx, yy, ww, hh) = cv2.boundingRect(cube_cells[i])
+        if (xx > min_x - 30 and xx < min_x + 30) and (min_y == None or min_y > yy):
+            min_y = yy
+            pos = i
+    temp = cube_cells[0]
+    del cube_cells[0]
+    cube_cells.insert(0,cube_cells[pos-1])
+    del cube_cells[pos]
+    cube_cells.insert(pos,temp)
+
+    
+image=cv2.imread("cubez.png")
 
 """
 Canny Edge Detection
@@ -329,9 +360,10 @@ square_contours = squareApproximation (contours)
 square_in_square = searchSquareInSquare(square_contours)  
 cube_cells = eliminatingSquares(square_contours, square_in_square)
 
-
+orientation(cube_cells)
 
 cccc=0
+#cv2.drawContours(image, [cube_cells[0]], -1, (0,255,0), 2)
 for sc in cube_cells:
     cv2.drawContours(image, [sc], -1, (0,255,0), 2)
     cv2.putText(image,str(cccc),cv2.boundingRect(sc)[:2], cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),2)
