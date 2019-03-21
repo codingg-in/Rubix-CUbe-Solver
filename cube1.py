@@ -272,19 +272,10 @@ def eliminatingSquares(square_contours, square_in_square):
 
     sc_sis = temp_sc_copy
 
-        
-    ##print (square_contours)
-    ##print (square_in_square)
-    ##print (sc_sis)
-    ##print (temp_sc_copy)
-
-
-
     """ 
     For finding which are cells of rubik's cube face, I am going to
     find area and keep only those which are of same area in approx and
     remove significantly small ones. (For starter)
-
     """
     max_area=0
 
@@ -300,78 +291,168 @@ def eliminatingSquares(square_contours, square_in_square):
             cube_cells.append(sc)
     return cube_cells
 
-def orientation(cube_cells):
+def calculateThresholdForOrientation(cube_cells):
     """
-    Arranging cell at (1, 1) coordinate at the first position of cube_cells
+    This is important function to calculate threshold value for orientation
+    of cells as if image of cube is in some rotated orientation then this will
+    adjust its algorithm accordingly.
     """
-    min_x = None
-    pos = 0
+    arr_x = []
+    arr_y = []
+    thres = 0
     for i in range (0, len(cube_cells)):
         (x, y, w, h) = cv2.boundingRect(cube_cells[i])
-        if min_x == None or x < min_x:
-            min_x = x
-            pos = i
+        arr_x.append(x) 
+        arr_y.append(y)
+    for j in range (0, len(arr_y)):
+        ty = None
+        pos = 0
+        for i in range (j, len(arr_y)):
+            if ty == None or arr_y[i] < ty:
+                ty = arr_y[i]
+                pos = i
+        temp = arr_x[j]
+        del arr_x[j]
+        arr_x.insert(j,arr_x[pos-1])
+        del arr_x[pos]
+        arr_x.insert(pos,temp)
+        temp = arr_y[j]
+        del arr_y[j]
+        arr_y.insert(j,arr_y[pos-1])
+        del arr_y[pos]
+        arr_y.insert(pos,temp)
 
-    temp = cube_cells[0]
-    del cube_cells[0]
-    cube_cells.insert(0,cube_cells[pos-1])
-    del cube_cells[pos]
-    cube_cells.insert(pos,temp)
-  
-    min_y = None
-    pos = 0
-    for i in range (0, len(cube_cells)):
-        (xx, yy, ww, hh) = cv2.boundingRect(cube_cells[i])
-        if (xx > min_x - 30 and xx < min_x + 30) and (min_y == None or min_y > yy):
-            min_y = yy
-            pos = i
-    temp = cube_cells[0]
-    del cube_cells[0]
-    cube_cells.insert(0,cube_cells[pos-1])
-    del cube_cells[pos]
-    cube_cells.insert(pos,temp)
+    i = 0
+    sqrt_cc = int(math.sqrt(len(cube_cells)))
+    floor_cc = math.sqrt(len(cube_cells))
+##    print (sqrt_cc,"+",floor_cc)
+##    print (floor_cc - math.floor(floor_cc))
+    if floor_cc - math.floor(floor_cc) < 1.0 and floor_cc - math.floor(floor_cc) > 0:
+        perfect_sq = sqrt_cc + 1
+    else:
+        perfect_sq = sqrt_cc
+        
+##    print (arr_y)
+    while i < len(cube_cells)-sqrt_cc + 1 :
+##        print( i + perfect_sq > len(cube_cells)-sqrt_cc and sqrt_cc !=perfect_sq)
+        if  i + perfect_sq > len(cube_cells)-sqrt_cc and sqrt_cc != perfect_sq:
+            break
+##        print ("  i = ",i, len(cube_cells))
+##        print (sqrt_cc," + ",perfect_sq)
+##        print ("thres",thres)
+##        print (abs(arr_y[i+1] - arr_y[i+0]))
+##        print (abs(arr_y[i+2] - arr_y[i+1]))
+##        print (abs(arr_y[i+2] - arr_y[i+0]),"\n")
+        thres = max (thres, abs(arr_y[i+1] - arr_y[i+0]), \
+                            abs(arr_y[i+2] - arr_y[i+1]), \
+                            abs(arr_y[i+2] - arr_y[i+0]))
+        i = i + sqrt_cc
 
-    
-image=cv2.imread("cubez.png")
+    return thres + 1
 
-"""
-Canny Edge Detection
-"""
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-canny = cv2.Canny(blurred, 20, 40)
-##cv2.imshow("try",canny)
+def orientation(cube_cells):
+    """
+    Arranging cell at (1, 1) coordinate at the first position of cube_cells,
+    cell at (1, 2) coordinate at the second position of cube_cells so on...
+    """
+##    for i in range (0, len(cube_cells)):
+##        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+##        print(x,".",y)
+##    print ("\n")
+##    
+    threshold = calculateThresholdForOrientation(cube_cells)
+##    print (threshold)
+    for j in range(0,len(cube_cells)-0):
+        for k in range (0, len(cube_cells)):
+            (x, y, w, h) = cv2.boundingRect(cube_cells[k])
+##            print(x,".",y)
+##        print ("\n")
+        min_y = None
+        pos = 0
+        for i in range (j, len(cube_cells)):
+            (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+            if min_y == None or y < min_y:
+                min_y = y
+                pos = i
+##        print (j,"+",pos,"?",min_y)
+        temp = cube_cells[j]
+        del cube_cells[j]
+        cube_cells.insert(j,cube_cells[pos-1])
+        del cube_cells[pos]
+        cube_cells.insert(pos,temp)
+        
+        min_x = None
+        pos = 0
+        for i in range (j, len(cube_cells)):
+            (xx, yy, ww, hh) = cv2.boundingRect(cube_cells[i])
+            if (yy > min_y - threshold and yy < min_y + threshold) and  (min_x == None or xx < min_x):
+                min_x = xx
+                pos = i
+##        print (j,"+",pos,"??",min_x)
+        temp = cube_cells[j]
+        del cube_cells[j]
+        cube_cells.insert(j,cube_cells[pos-1])
+        del cube_cells[pos]
+        cube_cells.insert(pos,temp)
+        
+def trackingBox(cube_cells):
+    g=0
+def colorExtraction():
+    g = 0
 
-"""
-Dilation
-"""
-kernel = np.ones((3,3), np.uint8)
-dilated = cv2.dilate(canny, kernel, iterations=3)
-##cv2.imshow("3",dilated)
-
-"""
-Finding Contours
-"""
-(contours, hierarchy) = cv2.findContours(dilated.copy(),cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-##cv2.drawContours(image, contours, -1, (255,0,0), 2)
-##cv2.imshow("1",image)
-
-square_contours = squareApproximation (contours)
-square_in_square = searchSquareInSquare(square_contours)  
-cube_cells = eliminatingSquares(square_contours, square_in_square)
-
-orientation(cube_cells)
-
-cccc=0
-#cv2.drawContours(image, [cube_cells[0]], -1, (0,255,0), 2)
-for sc in cube_cells:
-    cv2.drawContours(image, [sc], -1, (0,255,0), 2)
-    cv2.putText(image,str(cccc),cv2.boundingRect(sc)[:2], cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),2)
-    cccc=cccc+1
-
-cv2.imshow("5",image)
 
 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+def myMain(image):
+    ##image=cv2.imread("cube0.png")
+
+    """
+    Canny Edge Detection
+    """
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+    canny = cv2.Canny(blurred, 20, 40)
+    ##cv2.imshow("try",canny)
+
+    """
+    Dilation
+    """
+    kernel = np.ones((3,3), np.uint8)
+    dilated = cv2.dilate(canny, kernel, iterations=3)
+    ##cv2.imshow("3",dilated)
+
+    """
+    Finding Contours
+    """
+    (contours, hierarchy) = cv2.findContours(dilated.copy(),cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    ##cv2.drawContours(image, contours, -1, (255,0,0), 2)
+    ##cv2.imshow("1",image)
+
+    square_contours = squareApproximation (contours)
+    if len(square_contours) < 1:
+        return image
+    square_in_square = searchSquareInSquare(square_contours)  
+    cube_cells = eliminatingSquares(square_contours, square_in_square)
+    if len(cube_cells) < 1:
+        return image 
+    if len(cube_cells) > 5:
+        orientation(cube_cells)
+    ##print (cube_cells)
+
+    ##    print (len(square_contours))
+    ##    print (len(square_in_square))
+    ##    print (len(cube_cells))
+
+    cccc=0
+    img = image.copy()
+    for sc in cube_cells:
+        cv2.drawContours(img, [sc], -1, (0,255,0), 2)
+        cv2.putText(img,str(cccc),cv2.boundingRect(sc)[:2], cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),2)
+        cccc=cccc+1
+        
+    return img
+    ##cv2.imshow("5",img)
+    ##cv2.waitKey(0)
+    ##cv2.destroyAllWindows()
+
+
 
