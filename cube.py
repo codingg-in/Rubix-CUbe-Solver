@@ -8,8 +8,8 @@ def capture(name):
         ret,frame=cap.read()
         cv2.namedWindow(name)
         cv2.moveWindow(name,20,20)
-        img=myMain(frame)
-        cv2.imshow(name,img)
+        rotate, img = myMain(frame, 1)
+        cv2.imshow(name, img)
         key=cv2.waitKey(1)
         if key==98:
             path=os.path.dirname(os.path.realpath(__file__))
@@ -17,6 +17,8 @@ def capture(name):
             if not os.path.exists(path):
                 os.mkdir(path)
             cv2.imwrite(path+name+".png",frame)
+            cv2.imwrite(path+name+"1.png",frame)
+
             break
     
     cap.release()
@@ -30,7 +32,11 @@ def load(name):
     cv2.moveWindow(name,20,20)
     image=cv2.imread(path)
     #print (image)
-    cv2.imshow(name,myMain(image))
+    rotate, image = myMain(image, 0)
+    if rotate == 0:
+        cv2.imshow(name, image)
+        cv2.waitKey(0)
+    return rotate
 
 capture("Left")
 ##capture("Right")
@@ -39,11 +45,13 @@ capture("Left")
 ##capture("Top")
 ##capture("Bottom")
 
-##load("cube")
-##load("cube0")    
-##load("cube1")    
-##load("cube2")    
-load("Left")    
+rotate = load("Left")
+if rotate == 1:
+    rotate = load("Left")
+##load("Right")    
+##load("Front")    
+##load("Back")    
+##load("Top")    
 ##load("Bottom")    
     
 cv2.waitKey(0)
