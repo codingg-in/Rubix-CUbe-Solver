@@ -297,7 +297,8 @@ def minX(cube_cells, j):
     min_x = None
     pos = 0
     for i in range (j, len(cube_cells)):
-        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
         if min_x == None or x < min_x:
             min_x = x
             pos = i
@@ -308,7 +309,8 @@ def minY(cube_cells, j):
     min_y = None
     pos = 0
     for i in range (j, len(cube_cells)):
-        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
         if min_y == None or y < min_y:
             min_y = y
             pos = i
@@ -319,7 +321,8 @@ def maxX(cube_cells, j):
     max_x = None
     pos = 0
     for i in range (j, len(cube_cells)):
-        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
         if max_x == None or x > max_x:
             max_x = x
             pos = i
@@ -330,7 +333,8 @@ def maxY(cube_cells, j):
     max_y = None
     pos = 0
     for i in range (j, len(cube_cells)):
-        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
         if max_y == None or y > max_y:
             max_y = y
             pos = i
@@ -347,7 +351,8 @@ def calculateThresholdForOrientation(cube_cells):
     arr_y = []
     thres = 0
     for i in range (0, len(cube_cells)):
-        (x, y, w, h) = cv2.boundingRect(cube_cells[i])
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
         arr_x.append(x) 
         arr_y.append(y)
     for j in range (0, len(arr_y)):
@@ -412,7 +417,8 @@ def orientation(cube_cells):
         min_x = None
         pos = 0
         for i in range (j, len(cube_cells)):
-            (xx, yy, ww, hh) = cv2.boundingRect(cube_cells[i])
+            xx = cube_cells[i][0][0][0]
+            yy = cube_cells[i][0][0][1]
             if (yy > min_y - threshold and yy < min_y + threshold) and  (min_x == None or xx < min_x):
                 min_x = xx
                 pos = i
@@ -437,66 +443,38 @@ def origanlCoordinate(cube_cells, axis, pos, coord):
         if cube_cells[pos][i][0][coord] == axis:
             return cube_cells[pos][i][0][1 - coord]
     
-def line_intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
 
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
+def angleToRotate(coord1, coord2):
+    coord1_x = coord1[0][0]
+    coord1_y = coord1[0][1]
+    coord2_x = coord2[0][0]
+    coord2_y = coord2[0][1]
+    origin_x = coord1_x
+    origin_y = coord2_y
+    
 
-    div = det(xdiff, ydiff)
-    if div == 0:
-       return 1, 0, 0
-
-    d = (det(*line1), det(*line2))
-    x = det(d, xdiff) / div
-    y = det(d, ydiff) / div
-    return 0, x, y
-
-
-def rotateImage(cube_cells, img, angle):
-    min_x, pos1 = minX(cube_cells, 0)
-    min_y, pos2 = minY(cube_cells, 0)
-    max_x, pos3 = maxX(cube_cells, 0)
-    max_y, pos4 = maxY(cube_cells, 0)
-
-    min_x_y = origanlCoordinate(cube_cells, min_x, pos1, 0)
-    min_y_x = origanlCoordinate(cube_cells, min_y, pos2, 1)
-    max_x_y = origanlCoordinate(cube_cells, max_x, pos3, 0)
-    max_y_x = origanlCoordinate(cube_cells, max_y, pos4, 1)
-
-    error, obj_x_center, obj_y_center = line_intersection (( [min_x, min_x_y], \
-                                                             [max_x, max_x_y]), \
-                                                           ( [min_y_x, min_y], \
-                                                             [max_y_x, max_y]))
-
-    height, width, channels = img.shape
-    x_center = ( width / 2 ) - obj_x_center
-    y_center = ( height / 2 ) - obj_y_center
-    M = np.float32([[1, 0, x_center], [0, 1, y_center]])
-    res = cv2.warpAffine(img, M, (width, height))
-    rotated = imutils.rotate(res, angle)
-    path = os.path.dirname(os.path.realpath(__file__))
-    path = path+"\\Images\\"
-    cv2.imwrite(path+'Left.png', rotated)
-
-def angleToRotate(cube_cells):
-    min_x, pos1 = minX(cube_cells, 0)
-    min_y, pos2 = minY(cube_cells, 0)
-
-    min_x_y = origanlCoordinate(cube_cells, min_x, pos1, 0)
-    min_y_x = origanlCoordinate(cube_cells, min_y, pos2, 1)
-
-    origin_x = min_x
-    origin_y = min_y
-
-    angle_minx = int (findAngle( (min_x, min_x_y), \
-                                 (min_y_x, min_y), \
+    angle_minx = int (findAngle( (coord1_x, coord1_y), \
+                                 (coord2_x, coord2_y), \
                                  (origin_x, origin_y)))
-    angle_miny = int (findAngle( (min_y_x, min_y), \
-                                 (min_x, min_x_y), \
+    angle_miny = int (findAngle( (coord2_x, coord2_y), \
+                                 (coord1_x, coord1_y), \
                                  (origin_x, origin_y)))
-    return angle_minx if angle_minx < angle_miny else -angle_miny
+
+
+##    print ("\n coord1_x",coord1_x )
+##    print ("\n coord1_y", coord1_y)
+##    print ("\n coord2_x",coord2_x )
+##    print ("\n coord2_y",coord2_y )
+##    print ("\n origin_x",origin_x )
+##    print ("\n origin_y", origin_y)
+##    print ("\n angle_minx",angle_minx )
+##    print ("\n angle_miny", angle_miny)
+
+    
+    if coord2_y < coord1_y:
+        return angle_minx if angle_minx < angle_miny else -angle_miny
+    else:
+        return -angle_minx if angle_minx < angle_miny else angle_miny
 
 def trackingBox(cube_cells):
     g=0
@@ -539,10 +517,42 @@ def colorExtraction(cube_cells,image):
 ##    print (color) 
     g=0
 
+def orderingCoordinatesOfSquareContours(cube_cells):
+    def order_points(cube_cells):
+        xSorted = cube_cells[np.argsort(cube_cells[:, 0][: , 0]), :]
+        leftMost = xSorted[:2, :]
+        rightMost = xSorted[2:, :]
+        leftMost = leftMost[np.argsort(leftMost[:, 0][:, 1]), :]
+        (tl, bl) = leftMost
+        rightMost = rightMost[np.argsort(rightMost[:, 0][:, 1]), :]
+        (tr, br) = rightMost
+        return np.array([tl, tr, br, bl], dtype="int32")
 
+    
+    for (i, c) in enumerate(cube_cells):
+        if i >= 0:
+                rect = order_points(c)
+                cube_cells[i][0][0] = rect[0][0]
+                cube_cells[i][1][0] = rect[1][0]
+                cube_cells[i][2][0] = rect[2][0]
+                cube_cells[i][3][0] = rect[3][0]
+
+def addingRemaingContours(cube_cells,iamge):
+    floor_cc = math.sqrt(len(cube_cells))
+
+    if floor_cc - math.floor(floor_cc) < 1.0 and floor_cc - math.floor(floor_cc) > 0:
+
+        
+
+
+            
+        print("asdasdasda")
+    else:
+        
+        print("gg")
+        
 
 def myMain(image, state):
-    
     """
     Canny Edge Detection
     """
@@ -581,39 +591,78 @@ def myMain(image, state):
     
     square_in_square = searchSquareInSquare(square_contours)  
     cube_cells = eliminatingSquares(square_contours, square_in_square)
+##    print(cube_cells)
+    orderingCoordinatesOfSquareContours(cube_cells)
+    
+##    print("aa\n",cube_cells)
     if len(cube_cells) < 1:
         return 0, image
-    if len(cube_cells) > 4:
-        orientation(cube_cells)
     if state == 0:
-        angle = angleToRotate(cube_cells)
-        img = image.copy()
-        if angle > 5 or angle < -5:
-            rotateImage(cube_cells, img, angle)
-            return 1, img
+        min_x, pos1 = minX(cube_cells, 0)
+        min_y, pos2 = minY(cube_cells, 0)
+        distance = None
+        pos = None
+        for i in range (0, len(cube_cells)):
+            d = math.sqrt( math.pow(cube_cells[i][0][0][0] - min_x, 2) + \
+                           math.pow(cube_cells[i][0][0][1] - min_y, 2))
+            if(distance == None or distance > d):
+                distance = d
+                pos = i
+        angle = angleToRotate(cube_cells[pos][0], cube_cells[pos][1])
+##        print(angle, pos)
+        if angle > 10 or angle < -10:
+            (h, w) = image.shape[:2]
+            M = cv2.getRotationMatrix2D((cube_cells[pos][0][0][0],\
+                                         cube_cells[pos][0][0][1]), angle, 1)
+            rotated = cv2.warpAffine(image, M, (w, h))
+            path = os.path.dirname(os.path.realpath(__file__))
+            path = path+"\\Images\\"
+            cv2.imwrite(path+'Left.png', rotated)
+            cv2.imshow("asdsada",rotated)
+            print("x")
+            return 1, rotated
+        else:
+            addingRemaingContours(cube_cells,image)
+##    if len(cube_cells) > 4:
+##        orientation(cube_cells)
+##        angle = angleToRotate(cube_cells)
+##        print (angle)
+##        img = image.copy()
+##         
+##            rotateImage(cube_cells, img, angle)
+##            
     ##print (cube_cells)
     ##    print (len(square_contours))
     ##    print (len(square_in_square))
     ##    print (len(cube_cells))
-    
-
+##    gggg = np.array([[[20,20]], [[120,20]], [[20,120]], [[120,120]]],np.int64)
+####    gggg = gggg.astype('int32')
+##    cube_cells.append(gggg)
+##    print(cube_cells)
+##    print(cube_cells[11].dtype)
+##    
     cccc=0
     img = image.copy()
     for sc in cube_cells:
-        (x, y, w, h) = cv2.boundingRect(sc)
+        x = sc[0][0][0]
+        y = sc[0][0][1]
+        w = sc[1][0][0] - x
+        h = sc[3][0][1] - y
         min_xy = w if w < h else h
-        cv2.circle(img,(x + int((w/2)), y + (int(h/2))), int(min_xy/2), (255,255,255), 2)
-        #cv2.drawContours(img, [sc], -1, (0,255,0), 2)
+##        cv2.circle(img,(x + int((w/2)), y + (int(h/2))), int(min_xy/2), (255,255,255), 2)
+        cv2.drawContours(img, [sc], -1, (0,255,0), 2)
         cv2.putText(img,str(cccc),cv2.boundingRect(sc)[:2], cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),2)
         cccc=cccc+1
-        
-
+            
+##    print(cube_cells)
 ##    cv2.imshow("5",img)
 ##    cv2.waitKey(0)
 ##    cv2.destroyAllWindows()
     return 0, img
 
-
+##
 ##if __name__ == '__main__':
 ##    image=cv2.imread("Left.png")
-##    myMain(image, 1)
+##    myMain(image, 0)
+
+    
