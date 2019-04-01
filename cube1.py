@@ -537,14 +537,101 @@ def orderingCoordinatesOfSquareContours(cube_cells):
                 cube_cells[i][2][0] = rect[2][0]
                 cube_cells[i][3][0] = rect[3][0]
 
-def addingRemaingContours(cube_cells,iamge):
+def addingRemaingContours(cube_cells,image):
     floor_cc = math.sqrt(len(cube_cells))
+    
+    xcount = 1
+    ycount = 1
+    x_array = [cube_cells[0][0][0][0]]
+    y_array = [cube_cells[0][0][0][1]]
 
-    if floor_cc - math.floor(floor_cc) < 1.0 and floor_cc - math.floor(floor_cc) > 0:
+    for i in range (0, len(cube_cells)):
+##            (x, y) = cube_cells[i][0][0]
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
+        print (x," . ", y)
+    for i in range (1, len(cube_cells)):
+        check = 0
+        x = cube_cells[i][0][0][0]
+        y = cube_cells[i][0][0][1]
+        w = cube_cells[i][1][0][0] - x
+        h = cube_cells[i][3][0][1] - y
+        print (w , h)
+        for j in range (0, len(x_array)):
+            if x_array[j] + w >  x and x_array[j] - w <  x:
+                check = 1
+                break
+        if check == 0:
+            x_array.append(x)
+            xcount = xcount + 1
+        check = 0
+        for j in range (0, len(y_array)):
+            if y_array[j] + w >  y and y_array[j] - w <  y:
+                check = 1
+                break
+        if check == 0:
+            y_array.append(y)
+            ycount = ycount + 1
+    x_array.sort()
+    y_array.sort()
+    w = 40
+    
+    i = 1
+    while i < len(x_array):
+        test = int(x_array[i-1] + w + (w / 3))
+        if test + w <= x_array[i] or test - w >= x_array[i]:
+            x_array.append(test)
+            xcount = xcount + 1
+            x_array.sort()
+        i = i + 1
 
+    i = 1
+    while i < len(y_array):
+        test = int(y_array[i-1] + w + (w / 3))
+        if test + w <= y_array[i] or test - w >= y_array[i]:
+            y_array.append(test)
+            ycount = ycount + 1
+            y_array.sort()
+        i = i + 1
+
+    print ("\n x_array", x_array )
+    print ("\n y_array", y_array )
+    print ("\n xcount", xcount )
+    print ("\n ycount", ycount )
+
+    if xcount == ycount:
+        ww = w - (w / 3)
+        print(cube_cells)
+        for i in range (0, len(x_array)):
+            for j in range (0, len(y_array)):
+                check = 0
+                for k in range (0, len(cube_cells)):
+                    if cube_cells[k][0][0][0] > x_array[i] - w and \
+                       cube_cells[k][0][0][0] < x_array[i] + w and \
+                       cube_cells[k][0][0][1] > y_array[j] - w and \
+                       cube_cells[k][0][0][1] < y_array[j] + w:
+                        check = 1
+                        break
+                if check == 0:
+                    cube_cells.append(np.array([[[x_array[i], y_array[j]]], \
+                                                [[x_array[i] + ww, y_array[j]]], \
+                                                [[x_array[i] + ww, y_array[j] + ww]], \
+                                                [[x_array[i], y_array[j] + ww]]],np.int32))
+                
+        print(cube_cells)
+        for i in range (0, len(x_array)):
+            for j in range (0, len(y_array)):
+                cv2.circle(image,(x_array[i],y_array[j]), int(1), (255,255,255), 2)
+        
+        
+##        cv2.circle(image,(319,168), int(1), (0,255,255), 2)
+##        gggg = np.array([[[303,90]], [[363,90]], [[363,150]], [[303,150]]],np.int32)
+##        cube_cells.append(gggg)
+        
         
 
 
+        
             
         print("asdasdasda")
     else:
@@ -609,7 +696,7 @@ def myMain(image, state):
                 distance = d
                 pos = i
         angle = angleToRotate(cube_cells[pos][0], cube_cells[pos][1])
-##        print(angle, pos)
+        print(angle, pos)
         if angle > 10 or angle < -10:
             (h, w) = image.shape[:2]
             M = cv2.getRotationMatrix2D((cube_cells[pos][0][0][0],\
@@ -655,14 +742,14 @@ def myMain(image, state):
         cccc=cccc+1
             
 ##    print(cube_cells)
-##    cv2.imshow("5",img)
-##    cv2.waitKey(0)
-##    cv2.destroyAllWindows()
+    cv2.imshow("5",img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return 0, img
 
 ##
-##if __name__ == '__main__':
-##    image=cv2.imread("Left.png")
-##    myMain(image, 0)
+if __name__ == '__main__':
+    image=cv2.imread("Left1.png")
+    myMain(image, 0)
 
     
